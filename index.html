@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#1a1433" />
+    <title>WizardPod</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+
+    <div id="frame" class="frame">
+      <!-- HUD -->
+      <img class="avatar avatar--left" src="/assets/avatar-p1.png" alt="Player 1: bear wizard" />
+      <img class="avatar avatar--right" src="/assets/avatar-p2.png" alt="Player 2: fox wizard" />
+
+      <div class="score score--left"><b id="scoreLeft">0</b><span>pts</span></div>
+      <div class="score score--right"><b id="scoreRight">0</b><span>pts</span></div>
+
+      <div class="banner"><span>WIZARDPOD</span></div>
+
+      <p class="round-label">ROUND 01</p>
+      <div class="clock"><span id="clock">1:30</span></div>
+      <p class="target">FIRST TO 5,000 POINTS</p>
+
+      <!-- Recipe cards -->
+      <div class="recipe recipe--left" id="recipeLeft">
+        <span class="recipe__eyebrow">BREW NEXT</span>
+        <b class="recipe__name" id="recipeLeftName">Moonlight tonic</b>
+        <div class="recipe__items">
+          <div class="slot" data-i="0"></div>
+          <div class="slot" data-i="1"></div>
+          <div class="slot" data-i="2"></div>
+        </div>
+        <span class="recipe__progress" id="recipeLeftProgress">0 / 3 ingredients collected</span>
+      </div>
+
+      <div class="recipe recipe--right" id="recipeRight">
+        <span class="recipe__eyebrow">BREW NEXT</span>
+        <b class="recipe__name" id="recipeRightName">Dragonfire elixir</b>
+        <div class="recipe__items">
+          <div class="slot" data-i="0"></div>
+          <div class="slot" data-i="1"></div>
+          <div class="slot" data-i="2"></div>
+        </div>
+        <span class="recipe__progress" id="recipeRightProgress">0 / 3 ingredients collected</span>
+      </div>
+
+      <!-- Bottom trays -->
+      <p class="tray-label" id="trayLeftLabel">SLICE TO BREW</p>
+      <div class="tray tray--left" id="trayLeft">
+        <div class="slot" data-i="0"></div>
+        <div class="slot" data-i="1"></div>
+        <div class="slot" data-i="2"></div>
+        <div class="slot" data-i="3"></div>
+      </div>
+
+      <p class="tray-label tray-label--right" id="trayRightLabel">SLICE TO BREW</p>
+      <div class="tray tray--right" id="trayRight">
+        <div class="slot" data-i="0"></div>
+        <div class="slot" data-i="1"></div>
+        <div class="slot" data-i="2"></div>
+        <div class="slot" data-i="3"></div>
+      </div>
+
+      <div class="advisory">
+        <div class="advisory__icon">☠</div>
+        <div>
+          <b>HAZARD APPROACHING</b>
+          <span>Dodge the green rings. Don’t slice!</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="intro">
+      <button class="start" id="startBtn" type="button">
+        <span class="start__glow"></span>
+        START
+      </button>
+      <p class="start-hint" id="introHint">Left: AirPods · Right: camera — hold up one hand.</p>
+    </div>
+
+    <div class="overlay hidden" id="over">
+      <div class="results">
+        <p class="results__eyebrow">ROUND OVER</p>
+        <h2 id="overWinner">PLAYER 1 WINS</h2>
+        <div class="results__scores">
+          <div class="results__side results__side--left">
+            <span>PLAYER 1</span>
+            <b id="overLeft">0</b>
+          </div>
+          <div class="results__side results__side--right">
+            <span>PLAYER 2</span>
+            <b id="overRight">0</b>
+          </div>
+        </div>
+        <button class="start start--small" id="againBtn" type="button">PLAY AGAIN</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

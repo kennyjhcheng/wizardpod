@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WizardPod — control scene</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #120c26;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script type="module">
+      // Source for docs/media/airpods-pointer.gif and hand-pointer.gif.
+      // Open with ?device=airpods or ?device=hand, then screen-record it.
+      const W = 1280;
+      const H = 720;
+      const TAU = Math.PI * 2;
+
+      const device = new URLSearchParams(location.search).get("device") === "hand" ? "hand" : "airpods";
+      const accent = device === "hand" ? "#FFB86B" : "#8ED8FF";
+      const ORB_COLORS = device === "hand" ? ["#FFD54A", "#FF9BD6", "#8ED8FF"] : ["#FFD54A", "#C9A0FF", "#8BE24A"];
+
+      const canvas = document.getElementById("c");
+      const ctx = canvas.getContext("2d");
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = `${W}px`;
+      canvas.style.height = `${H}px`;
+      ctx.scale(dpr, dpr);
+
+      const art = new Image();
+      art.src = device === "hand" ? "/docs/media/hand-render.jpg" : "/docs/media/airpods-render.jpg";
+
+      // Where the device "lives" in the frame, in stage units.
+      const ANCHOR = device === "hand" ? { x: 618, y: 96 } : { x: 640, y: 392 };
+
+      const label =
+        device === "hand"
+          ? { who: "PLAYER 2 · ONE HAND", how: "fingertip moves the cursor", hint: "webcam hand tracking · the cursor is the blade" }
+          : { who: "PLAYER 1 · AIRPODS", how: "head tilt moves the cursor", hint: "AirPods head tracking · the cursor is the blade" };
+
+      /** Blade path: wide and floaty for a head, snappier for a fingertip. */
+      function pos(t) {
+        return device === "hand"
+          ? { x: 1010 + 195 * Math.sin(t * 1.25 + 0.3), y: 392 + 168 * Math.sin(t * 1.55 + 2.0) }
+          : { x: 1000 + 190 * Math.sin(t * 0.85), y: 392 + 162 * Math.sin(t * 1.15 + 1.2) };
+      }
+
+      const trail = [];
+      const orbs = [];
+      const bits = [];
+      const rings = [];
+      const texts = [];
+      let orbAt = 0;
+      let started = performance.now();
+
+      function spawnOrb(now) {
+        // Aim it at where the blade will be in a moment, so the cut always lands.
+        const ahead = pos((now - started) / 1000 + 0.75);
+        const angle = Math.random() * TAU;
+        const dist = 20 + Math.random() * 70;
+        orbs.push({
+          x: Math.max(880, Math.min(W - 90, ahead.x + Math.cos(angle) * dist)),
+          y: Math.max(190, Math.min(H - 190, ahead.y + Math.sin(angle) * dist)),
+          r: 26 + Math.random() * 8,
+          born: now,
+          glyph: Math.floor(Math.random() * 3),
+          color: ORB_COLORS[Math.floor(Math.random() * ORB_COLORS.length)],
+          spin: (Math.random() - 0.5) * 1.2,
+          dead: false,
+        });
+      }
+
+      function burst(orb, now) {
+        orb.dead = true;
+        rings.push({ x: orb.x, y: orb.y, born: now, color: orb.color });
+        texts.push({ x: orb.x, y: orb.y - 26, born: now, text: "+100" });
+        for (let i = 0; i < 18; i++) {
+          const a = Math.random() * TAU;
+          const s = 90 + Math.random() * 340;
+          bits.push({
+            x: orb.x,
+            y: orb.y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s,
+            r: 2 + Math.random() * 4,
+            born: now,
+            life: 0.45 + Math.random() * 0.4,
+            color: Math.random() < 0.35 ? "#FFF3C4" : orb.color,
+          });
+        }
+      }
+
+      function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      function drawArt() {
+        const scale = Math.max(W / art.width, H / art.height);
+        const dw = art.width * scale;
+        const dh = art.height * scale;
+        ctx.drawImage(art, (W - dw) / 2, (H - dh) / 2, dw, dh);
+
+        // Darken the edges so the trail and type stay legible.
+        const shade = ctx.createLinearGradient(0, 0, W, H);
+        shade.addColorStop(0, "rgba(18,12,38,0.9)");
+        shade.addColorStop(0.45, "rgba(18,12,38,0.12)");
+        shade.addColorStop(1, "rgba(18,12,38,0.72)");
+        ctx.fillStyle = shade;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      function drawConnector(now, head) {
+        const mx = (ANCHOR.x + head.x) / 2;
+        const my = Math.min(ANCHOR.y, head.y) - 96;
+        ctx.save();
+        ctx.setLineDash([9, 10]);
+        ctx.lineDashOffset = -(now / 34);
+        ctx.strokeStyle = accent;
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(ANCHOR.x, ANCHOR.y);
+        ctx.quadraticCurveTo(mx, my, head.x, head.y);
+        ctx.stroke();
+        ctx.restore();
+
+        // A pulse travelling along the connector.
+        for (let i = 0; i < 3; i++) {
+          const k = ((now / 1400 + i / 3) % 1);
+          const q = 1 - k;
+          const x = q * q * ANCHOR.x + 2 * q * k * mx + k * k * head.x;
+          const y = q * q * ANCHOR.y + 2 * q * k * my + k * k * head.y;
+          ctx.globalAlpha = Math.sin(k * Math.PI) * 0.9;
+          ctx.fillStyle = accent;
+          ctx.beginPath();
+          ctx.arc(x, y, 3.4, 0, TAU);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      /** A potion bead: glassy core, coloured rim and a rune inside. */
+      function drawOrb(o, now) {
+        const k = Math.min(1, (now - o.born) / 240);
+        const breathe = 1 + Math.sin(now / 380 + o.x) * 0.05;
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        ctx.globalAlpha = k;
+
+        const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, o.r * 2.3);
+        glow.addColorStop(0, `${o.color}dd`);
+        glow.addColorStop(0.45, `${o.color}55`);
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, o.r * 2.3 * breathe, 0, TAU);
+        ctx.fill();
+
+        ctx.rotate(now / 2400 + o.x * 0.01);
+        const body = ctx.createRadialGradient(-o.r * 0.3, -o.r * 0.4, 2, 0, 0, o.r);
+        body.addColorStop(0, "rgba(255,255,255,0.95)");
+        body.addColorStop(0.5, o.color);
+        body.addColorStop(1, `${o.color}bb`);
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.arc(0, 0, o.r * breathe, 0, TAU);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.65)";
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(0, 0, o.r * breathe, 0, TAU);
+        ctx.stroke();
+
+        // Rune: star, ring or spark.
+        ctx.fillStyle = "rgba(18,12,38,0.55)";
+        ctx.strokeStyle = "rgba(18,12,38,0.55)";
+        if (o.glyph === 0) {
+          star(0, 0, o.r * 0.52, 4);
+          ctx.fill();
+        } else if (o.glyph === 1) {
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(0, 0, o.r * 0.44, 0, TAU);
+          ctx.stroke();
+        } else {
+          star(0, 0, o.r * 0.5, 3);
+          ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+
+      function star(x, y, r, points) {
+        ctx.beginPath();
+        for (let i = 0; i < points; i++) {
+          const a = (i / points) * TAU - Math.PI / 2;
+          const na = a + TAU / (points * 2);
+          const inner = r * 0.28;
+          if (i === 0) ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+          ctx.quadraticCurveTo(x + Math.cos(na) * inner, y + Math.sin(na) * inner, x + Math.cos(a + TAU / points) * r, y + Math.sin(a + TAU / points) * r);
+        }
+        ctx.closePath();
+      }
+
+      function drawTrail() {
+        const now = performance.now();
+        while (trail.length > 1 && now - trail[0].t > 340) trail.shift();
+        if (trail.length < 2) return;
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        for (let pass = 0; pass < 2; pass++) {
+          for (let i = 1; i < trail.length; i++) {
+            const p = trail[i];
+            const age = 1 - (now - p.t) / 340;
+            if (age <= 0) continue;
+            const heat = Math.min(1, p.v / 620);
+            const width = (pass === 0 ? 26 : 9) * (0.55 + heat * 0.9) * age;
+            if (pass === 0) {
+              ctx.strokeStyle = accent;
+              ctx.globalAlpha = (0.14 + 0.24 * heat) * age;
+              ctx.shadowColor = accent;
+              ctx.shadowBlur = 28 * heat;
+            } else {
+              ctx.strokeStyle = "#ffffff";
+              ctx.globalAlpha = (0.72 + 0.28 * heat) * age;
+              ctx.shadowBlur = 0;
+            }
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawHead(now, head) {
+        const pulse = 1 + Math.sin(now / 260) * 0.06;
+        ctx.save();
+        const halo = ctx.createRadialGradient(head.x, head.y, 2, head.x, head.y, 58);
+        halo.addColorStop(0, "rgba(255,255,255,0.95)");
+        halo.addColorStop(0.32, accent);
+        halo.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(head.x, head.y, 58 * pulse, 0, TAU);
+        ctx.fill();
+
+        ctx.translate(head.x, head.y);
+        ctx.rotate(now / 1400);
+        ctx.fillStyle = "#fff8df";
+        ctx.shadowColor = accent;
+        ctx.shadowBlur = 18;
+        star(0, 0, 26 * pulse, 4);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawType() {
+        ctx.save();
+        ctx.font = "600 15px Fredoka, ui-rounded, system-ui, sans-serif";
+        const w = ctx.measureText(label.who).width + 40;
+        roundRect(46, 34, w, 36, 18);
+        ctx.fillStyle = "rgba(18,12,38,0.72)";
+        ctx.fill();
+        ctx.strokeStyle = accent;
+        ctx.globalAlpha = 0.65;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = accent;
+        ctx.textBaseline = "middle";
+        ctx.fillText(label.who, 66, 53);
+
+        ctx.fillStyle = "#FFF3C4";
+        ctx.font = "700 36px Fredoka, ui-rounded, system-ui, sans-serif";
+        ctx.fillText(label.how, 44, 112);
+
+        ctx.fillStyle = "rgba(255,243,196,0.62)";
+        ctx.font = "500 17px Fredoka, ui-rounded, system-ui, sans-serif";
+        ctx.fillText(label.hint, 45, 144);
+        ctx.restore();
+      }
+
+      function frame() {
+        const now = performance.now();
+        const t = (now - started) / 1000;
+        const head = pos(t);
+
+        ctx.clearRect(0, 0, W, H);
+        drawArt();
+
+        // Faint tilt arcs around the device, so the input reads as motion.
+        ctx.save();
+        ctx.strokeStyle = accent;
+        ctx.globalAlpha = 0.18;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 9]);
+        for (let i = 0; i < 2; i++) {
+          const r = 165 + i * 46 + Math.sin(t * 1.3 + i) * 8;
+          ctx.beginPath();
+          ctx.arc(ANCHOR.x, ANCHOR.y, r, -2.35 + i * 0.18, 0.45 + i * 0.18);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        drawConnector(now, head);
+
+        if (now > orbAt) {
+          orbAt = now + 680;
+          if (orbs.length < 3) spawnOrb(now);
+        }
+        for (const o of orbs) {
+          if (o.dead) continue;
+          if (Math.hypot(head.x - o.x, head.y - o.y) < o.r + 22) burst(o, now);
+          else drawOrb(o, now);
+        }
+        for (let i = orbs.length - 1; i >= 0; i--) if (orbs[i].dead && now - orbs[i].born > 1500) orbs.splice(i, 1);
+
+        for (let i = rings.length - 1; i >= 0; i--) {
+          const r = rings[i];
+          const k = (now - r.born) / 520;
+          if (k >= 1) {
+            rings.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.globalAlpha = (1 - k) * 0.8;
+          ctx.strokeStyle = r.color;
+          ctx.lineWidth = 4 * (1 - k) + 1;
+          ctx.beginPath();
+          ctx.arc(r.x, r.y, 24 + k * 76, 0, TAU);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        for (let i = bits.length - 1; i >= 0; i--) {
+          const b = bits[i];
+          const k = (now - b.born) / 1000 / b.life;
+          if (k >= 1) {
+            bits.splice(i, 1);
+            continue;
+          }
+          bits[i].vy += 300 / 60;
+          bits[i].x += b.vx / 60;
+          bits[i].y += b.vy / 60;
+          ctx.globalAlpha = 1 - k;
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.arc(bits[i].x, bits[i].y, b.r * (1 - k * 0.5), 0, TAU);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        const prev = trail.at(-1);
+        trail.push({ x: head.x, y: head.y, t: now, v: prev ? Math.hypot(head.x - prev.x, head.y - prev.y) * 60 : 0 });
+        drawTrail();
+        drawHead(now, head);
+
+        for (let i = texts.length - 1; i >= 0; i--) {
+          const x = texts[i];
+          const k = (now - x.born) / 900;
+          if (k >= 1) {
+            texts.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.globalAlpha = 1 - k;
+          ctx.fillStyle = "#FFD54A";
+          ctx.font = "700 26px Fredoka, ui-rounded, system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.strokeStyle = "rgba(18,12,38,0.6)";
+          ctx.lineWidth = 5;
+          ctx.strokeText(x.text, x.x, x.y - k * 30);
+          ctx.fillText(x.text, x.x, x.y - k * 30);
+          ctx.restore();
+        }
+
+        drawType();
+        requestAnimationFrame(frame);
+      }
+
+      art.decode().then(() => {
+        started = performance.now();
+        requestAnimationFrame(frame);
+      });
+    </script>
+  </body>
+</html>

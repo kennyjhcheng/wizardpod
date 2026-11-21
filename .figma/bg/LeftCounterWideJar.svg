@@ -1,0 +1,8 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="79" height="101" viewBox="0 0 79 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Left-Counter-Wide-Jar">
+<path id="Glass" d="M14 11H66V25C74.6667 27.6667 79 34 79 44V86C79 96 74 101 64 101H14C4.66667 101 0 96 0 86V44C0 35.3333 4.66667 29 14 25V11Z" fill="#46405F"/>
+<path id="Liquid" d="M61 55H18C12.4772 55 8 59.4772 8 65V82C8 87.5228 12.4772 92 18 92H61C66.5228 92 71 87.5228 71 82V65C71 59.4772 66.5228 55 61 55Z" fill="#554456"/>
+<path id="Cork" d="M65 0H15C12.2386 0 10 2.23858 10 5V11C10 13.7614 12.2386 16 15 16H65C67.7614 16 70 13.7614 70 11V5C70 2.23858 67.7614 0 65 0Z" fill="#51445B"/>
+<path id="Highlight" d="M18 40.5C18 38.567 16.433 37 14.5 37C12.567 37 11 38.567 11 40.5V48.5C11 50.433 12.567 52 14.5 52C16.433 52 18 50.433 18 48.5V40.5Z" fill="#655C74"/>
+</g>
+</svg>

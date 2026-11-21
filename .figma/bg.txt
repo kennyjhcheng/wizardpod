@@ -1,0 +1,13 @@
+bg-wall-left 13:1550
+bg-floor-left 13:1563
+bg-shelves-left 13:1565
+bg-bottles-left 13:1570
+bg-counter-left 13:1601
+bg-wall-right 13:1605
+bg-floor-right 13:1615
+bg-arch-right 13:1617
+bg-shelves-right 13:1635
+bg-bottles-right 13:1640
+bg-counter-right 13:1671
+bg-divider 13:1675
+bg-vignette 13:1677

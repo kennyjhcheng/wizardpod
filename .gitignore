@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.freebuff/
+.cloud-attachments/
+.figma/out/
+.DS_Store
+*.log
