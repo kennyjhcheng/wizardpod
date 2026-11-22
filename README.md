@@ -5,9 +5,14 @@ half of the workshop — slice the ones your potion needs, leave everything else
 
 ![WizardPod mid-round: both cauldrons brewing, potions flying, 2,600 versus 2,800 points](docs/media/gameplay.png)
 
-**Player 1** is played with AirPods: AirPointer turns head motion into the macOS cursor, so the wand
-follows the pointer itself. **Player 2** holds up one hand to the webcam and the index fingertip
-becomes the blade. Ninety seconds, first to 5,000 points.
+**Player 1** is played with AirPods: [AirPointer](https://github.com/oscarcreatess/airpointer) turns the
+motion of the closed case into the macOS cursor, so the wand follows the pointer itself. **Player 2**
+holds up one hand to the webcam and the index fingertip becomes the blade. Ninety seconds, first to
+5,000 points.
+
+Built and played on an Apple silicon Mac running macOS 26, a first-generation pair of AirPods Pro and
+a built-from-source AirPointer. Full requirements, permissions and calibration steps are in
+[docs/SETUP.md](docs/SETUP.md).
 
 ## Controls
 
@@ -22,9 +27,16 @@ becomes the blade. Ninety seconds, first to 5,000 points.
 
 ![A 3D render of AirPods with a dashed motion arc running to a glowing cursor that slices through potion orbs](docs/media/airpods-pointer.gif)
 
-AirPointer reads head motion from the AirPods and moves the macOS cursor with it. The page only
-listens for `pointermove`, so the wand, the blade and the collision point are all pinned to the real
-system cursor — there is no extra bridge, button or pairing step inside the game.
+AirPointer reads the motion sensors in the AirPods while they sit in the closed case and moves the
+macOS cursor with it. The page only listens for `pointermove`, so the wand, the blade and the
+collision point are all pinned to the real system cursor — there is no extra bridge, button or
+pairing step inside the game.
+
+That does mean one piece of software outside the repo: AirPointer needs macOS 26 on Apple silicon,
+Xcode to build, and Accessibility + Bluetooth permission, and a second-generation-or-older pair is
+on its experimental list. [docs/SETUP.md](docs/SETUP.md) covers the build, the four-step first-run
+setup, calibration, the 30-minute session limit, and two alternative AirPods-to-cursor tools if the
+first-generation case is too jittery.
 
 ### Hand → cursor
 
@@ -55,6 +67,18 @@ and a 138 BPM background track, so there are no audio files to load.
 - Spiky green-ringed orb: **−500**, and your cauldron turns toxic until you finish your next recipe.
   Dodge it — don't slice.
 
+## Setup
+
+| | Player 1 | Player 2 |
+| --- | --- | --- |
+| Hardware | AirPods Pro (1st gen here) in the case | Any webcam |
+| Software | AirPointer, built from source | None — MediaPipe runs in the page |
+| Permissions | Accessibility + Bluetooth | Camera |
+
+macOS 26 (Tahoe) on Apple silicon, Xcode for AirPointer, `fn ⌃` to connect, three-dot calibration,
+the hand in frame, then press **Start**. The long version — including what the AirPods do and do not
+allow, and what to try when pointing feels rough — is in **[docs/SETUP.md](docs/SETUP.md)**.
+
 ## Run
 
 ```bash
@@ -83,6 +107,7 @@ HTML/CSS in `index.html` + `src/style.css`, the arena is canvas.
 | `src/input/pointer.ts` | Left blade from the macOS cursor |
 | `src/input/hand.ts` | Right blade from the webcam |
 | `src/demo.ts` | Scripted `?demo` pilot used for the captures below |
+| `docs/SETUP.md` | AirPods + AirPointer, webcam, browser and audio setup |
 | `public/assets/` | Figma components: avatars, cauldrons, ingredients (whole + both sliced halves), wands, hazards, workshop |
 | `public/models`, `public/mediapipe` | Hand model and WASM, served locally |
 | `docs/media/` | The screenshots, GIFs and the 3D control renders |
