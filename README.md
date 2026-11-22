@@ -33,10 +33,10 @@ collision point are all pinned to the real system cursor — there is no extra b
 pairing step inside the game.
 
 That does mean one piece of software outside the repo: AirPointer needs macOS 26 on Apple silicon,
-Xcode to build, and Accessibility + Bluetooth permission, and a second-generation-or-older pair is
-on its experimental list. [docs/SETUP.md](docs/SETUP.md) covers the build, the four-step first-run
-setup, calibration, the 30-minute session limit, and two alternative AirPods-to-cursor tools if the
-first-generation case is too jittery.
+Xcode to build, and Accessibility + Bluetooth permission — and it lists the AirPods Pro 1 as
+experimental, tested with one pair. [docs/SETUP.md](docs/SETUP.md) covers the build, the four-step
+first-run setup, calibration, the 30-minute session limit, and two alternative AirPods-to-cursor
+tools if the first-generation case is too jittery.
 
 ### Hand → cursor
 
